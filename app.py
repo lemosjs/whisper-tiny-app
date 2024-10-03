@@ -2,6 +2,8 @@ import torch
 from flask import Flask, request, jsonify
 from transformers import pipeline
 import io
+from pydub import AudioSegment
+import os
 
 app = Flask(__name__)
 
@@ -22,24 +24,57 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+MAX_DURATION_SECONDS = 15
+MAX_FILE_SIZE_MB = 10
+
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
+    
     file = request.files['file']
+    
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
-    if file and allowed_file(file.filename):
-        file_content = file.read()
-        file_stream = io.BytesIO(file_content)
-        
-        try:
-            text = pipe(file_stream, batch_size=BATCH_SIZE, return_timestamps=True)["text"]
-            return jsonify({"transcript": text})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-    else:
+    
+    if not allowed_file(file.filename):
         return jsonify({"error": "File type not allowed"}), 400
+    
+    # Check file size
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)  # Reset file pointer
+    if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
+        return jsonify({"error": f"File size exceeds {MAX_FILE_SIZE_MB}MB limit"}), 400
+
+    # Save file temporarily
+    temp_path = "temp_audio"
+    file.save(temp_path)
+    
+    try:
+        # Check audio duration
+        audio = AudioSegment.from_file(temp_path)
+        duration_seconds = len(audio) / 1000
+        if duration_seconds > MAX_DURATION_SECONDS:
+            return jsonify({"error": f"Audio duration exceeds {MAX_DURATION_SECONDS} seconds limit"}), 400
+
+        # Process the file
+        with open(temp_path, "rb") as audio_file:
+            result = pipe(audio_file, batch_size=BATCH_SIZE, return_timestamps=True)
+        
+        return jsonify({
+            "transcript": result["text"],
+            "chunks": result.get("chunks"),
+            "duration": duration_seconds
+        })
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    finally:
+        # Clean up temporary file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 if __name__ == '__main__':
     print("Server is running on port 5000")
