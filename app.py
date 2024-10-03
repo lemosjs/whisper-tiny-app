@@ -1,11 +1,13 @@
 import torch
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Add this import
 from transformers import pipeline
-import io
 from pydub import AudioSegment
 import os
 
 app = Flask(__name__)
+CORS(app)  # Add this line to enable CORS for all routes
+
 
 MODEL_NAME = "openai/whisper-tiny"
 BATCH_SIZE = 8
@@ -76,6 +78,8 @@ def transcribe():
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
+port = os.getenv("PORT", 5000)
+
 if __name__ == '__main__':
     print("Server is running on port 5000")
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=port)
