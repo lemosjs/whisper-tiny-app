@@ -4,3 +4,4 @@ torch
 transformers
 pydub
 flask-cors
+python-dotenv

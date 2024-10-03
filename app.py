@@ -3,7 +3,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS  # Add this import
 from transformers import pipeline
 from pydub import AudioSegment
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Add this line to enable CORS for all routes
@@ -81,5 +84,5 @@ def transcribe():
 port = os.getenv("PORT", 5000)
 
 if __name__ == '__main__':
-    print("Server is running on port 5000")
+    print(f"Server is running on port {port}")
     app.run(host="0.0.0.0", port=port)
