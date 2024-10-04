@@ -6,4 +6,4 @@ pydub
 flask-cors
 python-dotenv
 ffmpeg-python
-ffprobe
+flask_limiter

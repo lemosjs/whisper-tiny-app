@@ -5,9 +5,20 @@ import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 CORS(app)
+
+# Initialize rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["50 per hour"],
+    storage_uri="memory://"
+)
+
 # Load model and processor
 processor = WhisperProcessor.from_pretrained("openai/whisper-tiny")
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
@@ -17,6 +28,7 @@ def index():
     return send_from_directory('./', 'index.html')
 
 @app.route('/transcribe', methods=['POST'])
+@limiter.limit("20 per minute")
 def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
@@ -32,7 +44,7 @@ def transcribe_audio():
         # Convert to WAV using ffmpeg-python
         output_path = temp_audio_path.replace('.mp3', '.wav')
         stream = ffmpeg.input(temp_audio_path)
-        stream = ffmpeg.output(stream, output_path, ar='16000', ac=1, acodec='pcm_s16le')
+        stream = ffmpeg.output(stream, output_path, ar='16000', ac=1, acodec='pcm_s16le', t='30')
         ffmpeg.run(stream, overwrite_output=True)
 
         # Read the WAV file
