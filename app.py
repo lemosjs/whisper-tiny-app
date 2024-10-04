@@ -3,10 +3,11 @@ import tempfile
 import ffmpeg
 import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 app = Flask(__name__)
-
+CORS(app)
 # Load model and processor
 processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
@@ -63,6 +64,7 @@ def transcribe_audio():
         return jsonify({'transcript': transcription[0]})
     
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
 
 port = os.environ.get("PORT", 3003)
