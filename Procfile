@@ -1,1 +1,1 @@
-web: apt-get update && apt-get install -y ffmpeg && gunicorn wsgi:app
+web: gunicorn wsgi:app
