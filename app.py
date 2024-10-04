@@ -9,8 +9,8 @@ from transformers import WhisperProcessor, WhisperForConditionalGeneration
 app = Flask(__name__)
 CORS(app)
 # Load model and processor
-processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+processor = WhisperProcessor.from_pretrained("openai/whisper-tiny")
+model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
 
 @app.route('/')
 def index():
