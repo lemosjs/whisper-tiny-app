@@ -5,3 +5,4 @@ transformers
 pydub
 flask-cors
 python-dotenv
+ffmpeg-python
