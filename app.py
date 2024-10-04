@@ -60,7 +60,7 @@ def transcribe_audio():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-port = os.environ.get("PORT", 5000)
+port = os.environ.get("PORT", 3003)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port)
