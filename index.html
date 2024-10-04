@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        #transcript {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 100px;
+        }
+        #audioPlayback {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Transcription Test</h1>
+    <button id="startRecord">Start Recording</button>
+    <button id="stopRecord" disabled>Stop Recording</button>
+    <button id="playAudio" disabled>Play Audio</button>
+    <div id="audioPlayback"></div>
+    <div>
+        <h2>Transcript:</h2>
+        <div id="transcript"></div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
+        let audioUrl;
+
+        const startRecord = document.getElementById('startRecord');
+        const stopRecord = document.getElementById('stopRecord');
+        const playAudio = document.getElementById('playAudio');
+        const transcript = document.getElementById('transcript');
+        const audioPlayback = document.getElementById('audioPlayback');
+
+        startRecord.onclick = async () => {
+            audioChunks = [];
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            startRecord.disabled = true;
+            stopRecord.disabled = false;
+            playAudio.disabled = true;
+        };
+
+        stopRecord.onclick = () => {
+            mediaRecorder.stop();
+            startRecord.disabled = false;
+            stopRecord.disabled = true;
+
+            mediaRecorder.onstop = async () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                audioUrl = URL.createObjectURL(audioBlob);
+                playAudio.disabled = false;
+
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.mp3');
+
+                try {
+                    const response = await fetch('/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    transcript.textContent = result.transcript;
+                } catch (error) {
+                    console.error('Error:', error);
+                    transcript.textContent = 'Error occurred during transcription.';
+                }
+            };
+        };
+
+        playAudio.onclick = () => {
+            const audioElement = document.createElement('audio');
+            audioElement.src = audioUrl;
+            audioElement.controls = true;
+            audioPlayback.innerHTML = '';
+            audioPlayback.appendChild(audioElement);
+            audioElement.play();
+        };
+    </script>
+</body>
+</html>
