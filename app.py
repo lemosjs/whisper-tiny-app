@@ -28,7 +28,7 @@ def index():
     return send_from_directory('./', 'index.html')
 
 @app.route('/transcribe', methods=['POST'])
-@limiter.limit("20 per minute")
+@limiter.limit("2 per minute")
 def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
